@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #define MIN_PID 300
 #define MAX_PID 5000
 
@@ -9,6 +10,7 @@ enum BIT_STATUS
   FREE = 0,
   ALLOCATED = 1
 };
+pthread_mutex_t mutexLock;
 
 void putBit(char *map, int index, enum BIT_STATUS val)
 {
@@ -35,22 +37,28 @@ int allocate_map(void)
   {
     return -1;
   }
+  pthread_mutex_init(&mutexLock, NULL);
   return 1;
 }
 int allocate_pid(void)
 {
+  pthread_mutex_lock(&mutexLock);
   for (int i = MIN_PID; i <= MAX_PID; i++)
   {
     if (!getBit(PID_POOL, i - MIN_PID))
     {
       putBit(PID_POOL, i - MIN_PID, ALLOCATED);
+      pthread_mutex_unlock(&mutexLock);
       return i;
     }
   }
+  pthread_mutex_unlock(&mutexLock);
   return -1;
 }
 
 void release_pid(int pid)
 {
+  pthread_mutex_lock(&mutexLock);
   putBit(PID_POOL, pid - MIN_PID, FREE);
+  pthread_mutex_unlock(&mutexLock);
 }

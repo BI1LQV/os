@@ -11,8 +11,7 @@ int main()
   {
     int pid = allocate_pid();
     printf("get pid=%d\n", pid);
-    // sleep(2 + (rand() / 100000000.0));
-    sleep((rand() / 1000000000.0));
+    sleep(2 + (rand() / 100000000.0));
     release_pid(pid);
     printf("release pid=%d\n", pid);
   }
