@@ -39,6 +39,7 @@ static void birthday_exit(void)
   struct birthday *ptr, *next;
   list_for_each_entry_safe(ptr, next, &birthday_list, list)
   {
+    printk(KERN_INFO "the man whose birth month is %d has been removed\n", ptr->month);
     list_del(&ptr->list);
     kfree(ptr);
   }
