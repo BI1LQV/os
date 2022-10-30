@@ -1,4 +1,4 @@
 make 
-sudo rmmod 3
-sudo insmod 3.ko
+sudo rmmod 32
+sudo insmod 32.ko
 sudo dmesg
