@@ -28,6 +28,7 @@ char getLast(char *word)
 char **history[20] = {0}; //懒得自己维护lru了 每次满了往前腾10个空就行
 int historyPtr = 0;
 int count = 0;
+int cleanCount = 0;
 int main()
 {
   char **args = (char **)malloc(sizeof(char *) * MAX_LINE);
@@ -55,9 +56,37 @@ int main()
       {
         for (int p = historyPtr - 1; p >= historyPtr - 10 && p >= 0; p--)
         {
-          // printf("%d\n", p);
-          printf("[%d]%s\n", count - (historyPtr - p), history[p][0]);
+          printf("[%d]", count - (historyPtr - p)); //打印序号
+          int h = 0;
+          while (history[p][h])
+          {
+            printf("%s ", history[p][h]); //打印每个参数
+            h++;
+          }
+          printf("\n");
         }
+      }
+      else if (strcmp(word, "!!") == 0) //执行最近的历史记录
+      {
+        if (historyPtr == 0) //没历史记录 不能越界 直接抛错
+        {
+          printf("ERROR NO HISTORY!\n");
+        }
+        else
+        {
+          memcpy(args, history[historyPtr - 1], sizeof(char *) * MAX_LINE); //复制一份 最近的历史记录来执行
+        }
+      }
+      else if (word[0] == '!')
+      {
+        word[0] = '0';
+        int targetIdx = atoi(word);
+        targetIdx = targetIdx - cleanCount * 10;
+        if (targetIdx < 0 || targetIdx > historyPtr) //越界 抛错
+        {
+          printf("ERROR NO HISTORY!\n");
+        }
+        memcpy(args, history[targetIdx], sizeof(char *) * MAX_LINE); //也是复制来执行
       }
       else
       {
@@ -103,14 +132,21 @@ int main()
     if (historyPtr == 20)
     { // history满了
       for (int p = 0; p < 10; p++)
-      {
+      { //包括字符串的数组 和 字符串本身都释放掉
+        int i = 0;
+        while (history[p][i])
+        {
+          free(history[p][i]);
+          i++;
+        }
         free(history[p]);
       }
       for (int p = 0; p < 10; p++)
-      {
+      { //把后面10个腾回到前面去
         history[p] = history[p + 10];
       }
       historyPtr = 10;
+      cleanCount++;
     }
     count++;
   }
