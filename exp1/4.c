@@ -31,7 +31,6 @@ int count = 0;
 int main()
 {
   char **args = (char **)malloc(sizeof(char *) * MAX_LINE);
-  char **argsBackup = (char **)malloc(sizeof(char *) * MAX_LINE);
   int bkPtr = 0;
   int should_run = 1;
   while (should_run)
@@ -44,10 +43,9 @@ int main()
     int isBackground = 0; //判断是否后台运行
     do
     {
-      char *word = (char *)malloc(sizeof(char) * MAX_LINE);       //每个单词的大小 共用maxline好了
-      char *wordBackup = (char *)malloc(sizeof(char) * MAX_LINE); //备份
-      scanf("%s", word);                                          //读入一个词
-      c = getchar();                                              //吃一个空格
+      char *word = (char *)malloc(sizeof(char) * MAX_LINE); //每个单词的大小 共用maxline好了
+      scanf("%s", word);                                    //读入一个词
+      c = getchar();                                        //吃一个空格
       args[argsPtr++] = word;
       if (strcmp(word, "exit") == 0) // exit退出
       {
@@ -55,7 +53,7 @@ int main()
       }
       else if (strcmp(word, "history") == 0)
       {
-        for (int p = historyPtr - 1; p > historyPtr - 10 && p >= 0; p--)
+        for (int p = historyPtr - 1; p >= historyPtr - 10 && p >= 0; p--)
         {
           // printf("%d\n", p);
           printf("[%d]%s\n", count - (historyPtr - p), history[p][0]);
@@ -71,8 +69,6 @@ int main()
           word[endAt] = '\0';
           isBackground = 1;
         }
-        memcpy(wordBackup, word, sizeof(char) * MAX_LINE);
-        argsBackup[bkPtr++] = wordBackup;
       }
 
     } while (c == ' ');
@@ -101,22 +97,21 @@ int main()
         waitpid(id, &status, 0); //阻塞主线程
       }
     }
-    history[historyPtr++] = argsBackup;
-    argsBackup = (char **)malloc(sizeof(char *) * MAX_LINE);
-
-    // history[historyPtr++] = args;
-    // if (historyPtr == 19)
-    // { // history满了
-    //   for (int p = 0; p < 10; p++)
-    //   {
-    //     free(history[p]);
-    //   }
-    //   for (int p = 0; p < 10; p++)
-    //   {
-    //     history[p] = history[p + 10];
-    //   }
-    //   historyPtr = 10;
-    // }
+    char **bkArgs = (char **)malloc(sizeof(char *) * MAX_LINE); //拷贝一份 args会被覆盖的
+    memcpy(bkArgs, args, sizeof(char *) * MAX_LINE);
+    history[historyPtr++] = bkArgs;
+    if (historyPtr == 20)
+    { // history满了
+      for (int p = 0; p < 10; p++)
+      {
+        free(history[p]);
+      }
+      for (int p = 0; p < 10; p++)
+      {
+        history[p] = history[p + 10];
+      }
+      historyPtr = 10;
+    }
     count++;
   }
   return 0;
