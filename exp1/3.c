@@ -7,6 +7,7 @@
 static int ps_init(void)
 {
   struct task_struct *task;
+  int count = 0;
   printk(KERN_INFO "   PID  STATE                NAME\n");
   for_each_process(task)
   {
@@ -46,7 +47,9 @@ static int ps_init(void)
       state[--i] = 'A';
     }
     printk(KERN_INFO "%6d %s%20s\n", task->pid, state, task->comm);
+    count++;
   }
+  printk(KERN_INFO "count %d\n", count);
   return 0;
 }
 

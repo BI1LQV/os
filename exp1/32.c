@@ -5,30 +5,7 @@
 #include <linux/slab.h>
 #include <linux/sched/signal.h>
 
-// static int __init print_pcb(void)
-// {
-//   struct task_struct *task, *p;
-//   struct list_head *pos;
-//   int count = 0;
-
-//   printk("begin:\n");
-
-//   task = &init_task;
-
-//   list_for_each(pos, &task->tasks)
-//   {
-//     p = list_entry(pos, struct task_struct, tasks);
-//     count++;
-//     printk("\n\n");
-//     printk("pid:%d; parent'pid:%d; files'count:%d; fs'umask:%d;", p->pid, (p->parent)->pid,
-//            atomic_read(&((p->files)->count)), (p->fs)->umask);
-//     if (p->mm != NULL)
-//       printk("total_vm:%ld", (p->mm)->total_vm);
-//   }
-//   printk("进程数:%d\n", count);
-
-//   return 0;
-// }
+int count = 0;
 
 void dfsPrint(struct task_struct *root)
 {
@@ -75,6 +52,7 @@ void dfsPrint(struct task_struct *root)
     {
       state[--i] = 'A';
     }
+    count++;
     printk(KERN_INFO "%6d %s%20s\n", task->pid, state, task->comm);
     dfsPrint(task);
   }
@@ -84,6 +62,7 @@ static int ps_init(void)
 {
   printk(KERN_INFO "   PID  STATE                NAME\n");
   dfsPrint(&init_task);
+  printk(KERN_INFO "count %d\n", count);
   return 0;
 }
 
