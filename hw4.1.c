@@ -62,8 +62,8 @@ int main()
 {
   struct timeval startTime;
   struct timeval endTime;
-  gettimeofday(&startTime, NULL);
   pthread_mutex_init(&mutexLock, NULL);
+  gettimeofday(&startTime, NULL);
 #pragma omp parallel num_threads(2)
   {
     spinning(omp_get_thread_num());
