@@ -3,6 +3,7 @@
 #include <sys/time.h>
 #include <pthread.h>
 #include <math.h>
+#include <stdlib.h>
 #define THREAD_NUM 7
 struct lockNode
 {
@@ -61,13 +62,25 @@ void __enter_lock(struct lockNode root[], int directions[], int cur)
 
 void __exit_lock(struct lockNode root[], int directions[], int cur)
 {
-  if (cur == 1) //到叶子了（directions[0]是路径长度）
+  if (cur == directions[0]) //到根了
   {
     return;
   }
-  int direction = (directions[cur - 1] - 1) % 2;
-  root[directions[cur]].flag[direction] = 0;
-  __exit_lock(root, directions, cur - 1);
+  int sibling;
+  int direction;
+  if (directions[cur] % 2 == 0)
+  {
+    sibling = directions[cur] - 1;
+    direction = 1;
+  }
+  else
+  {
+    sibling = directions[cur] + 1;
+    direction = 0;
+  }
+  int father = (directions[cur] - 1) / 2;
+  root[father].flag[direction] = 0;
+  __exit_lock(root, directions, cur + 1);
 }
 
 void enter_lock(struct lockNode root[], int thread_id)
@@ -79,7 +92,7 @@ void enter_lock(struct lockNode root[], int thread_id)
 void exit_lock(struct lockNode root[], int thread_id)
 {
   int *path = getPath(thread_id);
-  __exit_lock(root, path, path[0]);
+  __exit_lock(root, path, 1);
 }
 
 int i = 0;
