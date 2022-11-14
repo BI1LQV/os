@@ -29,14 +29,17 @@ pthread_mutex_t mutexLock;
  */
 void calc()
 {
-  while (fabs(pi - ACC_PI) > DELTA && total < MAX_ITER)
+#pragma omp parallel num_threads(TOTAL_THREADS)
   {
-    int res = generates(BLOCK_SIZE);
-    pthread_mutex_lock(&mutexLock);
-    inside += res;
-    total += BLOCK_SIZE;
-    pi = 4 * inside / (double)total;
-    pthread_mutex_unlock(&mutexLock);
+    while (fabs(pi - ACC_PI) > DELTA && total < MAX_ITER)
+    {
+      int res = generates(BLOCK_SIZE);
+      pthread_mutex_lock(&mutexLock);
+      inside += res;
+      total += BLOCK_SIZE;
+      pi = 4 * inside / (double)total;
+      pthread_mutex_unlock(&mutexLock);
+    }
   }
 }
 
@@ -49,10 +52,7 @@ int main()
 
   srand(SEED);
 
-#pragma omp parallel num_threads(TOTAL_THREADS)
-  {
-    calc();
-  }
+  calc();
 
   gettimeofday(&t2, NULL);
   printf("pi=%.10f; inside=%d; outside=%d\n", pi, inside, total);
