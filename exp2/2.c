@@ -22,6 +22,7 @@ int generates(int total, unsigned int *seed)
 int inside = 0;
 int total = 0;
 double pi = 0;
+pthread_mutex_t mutexLock;
 
 /**
  * 无锁多线程
@@ -36,26 +37,28 @@ void calc()
   {
     int *resTarget = res + omp_get_thread_num();
     int *totalTarget = totalCount + omp_get_thread_num();
-    // int *resSnapshot = malloc(sizeof(int) * TOTAL_THREADS);
-    // int *totalSnapshot = malloc(sizeof(int) * TOTAL_THREADS);
-    while (fabs(pi - ACC_PI) > DELTA && *totalTarget < 2e8 / TOTAL_THREADS)
+    int iterCount = 0;
+    while (fabs(pi - ACC_PI) > DELTA && *totalTarget < MAX_ITER / TOTAL_THREADS)
     {
       *resTarget += generates(BLOCK_SIZE, &seed);
       *totalTarget += BLOCK_SIZE;
-      // memcpy(resSnapshot, res, sizeof(int) * TOTAL_THREADS);
-      // memcpy(totalSnapshot, totalCount, sizeof(int) * TOTAL_THREADS);
-      // int curInside = 0;
-      // int curTotal = 0;
-      // for (int i = 0; i < TOTAL_THREADS; i++)
-      // {
-      //   curInside += resSnapshot[i];
-      //   curTotal += totalSnapshot[i];
-      // }
-      // curInside += inside;
-      // curTotal += total;
-      // total = curTotal;
-      // inside = curInside;
-      // pi = 4 * curInside / (double)curTotal;
+      iterCount++;
+
+      if (iterCount % (TOTAL_THREADS * 100) == omp_get_thread_num())
+      {
+        int _inside = 0;
+        int _total = 0;
+        pthread_mutex_lock(&mutexLock);
+        for (int i = 0; i < TOTAL_THREADS; i++)
+        {
+          _inside += res[i];
+          _total += totalCount[i];
+        }
+        inside = _inside;
+        total = _total;
+        pi = 4 * _inside / (double)_total;
+        pthread_mutex_unlock(&mutexLock);
+      }
     }
   }
 }
@@ -64,7 +67,7 @@ int main()
 {
   struct timeval t1, t2;
   gettimeofday(&t1, NULL);
-
+  pthread_mutex_init(&mutexLock, NULL);
   calc();
 
   gettimeofday(&t2, NULL);
