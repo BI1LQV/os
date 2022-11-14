@@ -30,7 +30,7 @@ pthread_mutex_t mutexLock;
 void calc()
 {
   unsigned int seed = omp_get_thread_num();
-  while (fabs(pi - ACC_PI) > DELTA && total < 2e8)
+  while (fabs(pi - ACC_PI) > DELTA && total < MAX_ITER)
   {
     int res = generates(BLOCK_SIZE, &seed);
     pthread_mutex_lock(&mutexLock);

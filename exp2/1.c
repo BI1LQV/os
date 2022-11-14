@@ -29,7 +29,7 @@ pthread_mutex_t mutexLock;
  */
 void calc()
 {
-  while (fabs(pi - ACC_PI) > DELTA && total < 2e8)
+  while (fabs(pi - ACC_PI) > DELTA && total < MAX_ITER)
   {
     int res = generates(BLOCK_SIZE);
     pthread_mutex_lock(&mutexLock);
