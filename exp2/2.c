@@ -31,10 +31,11 @@ void calc()
 {
   int res[TOTAL_THREADS] = {0};
   int totalCount[TOTAL_THREADS] = {0};
-  unsigned int seed = omp_get_thread_num();
 
 #pragma omp parallel num_threads(TOTAL_THREADS)
   {
+    unsigned int seed = omp_get_thread_num();
+
     int *resTarget = res + omp_get_thread_num();
     int *totalTarget = totalCount + omp_get_thread_num();
     int iterCount = 0;
