@@ -22,8 +22,8 @@ int generates(int total, unsigned int *seed)
 int inside = 0;
 int total = 0;
 double pi = 0;
-pthread_mutex_t mutexLock;
 
+int lock = 1;
 /**
  * 无锁多线程
  */
@@ -42,6 +42,10 @@ void calc()
     while (fabs(pi - ACC_PI) > DELTA && *totalTarget < MAX_ITER / TOTAL_THREADS)
     {
       *resTarget += generates(BLOCK_SIZE, &seed);
+      while (lock == 0)
+      {
+        printf("locking\n");
+      }
       *totalTarget += BLOCK_SIZE;
       iterCount++;
 
@@ -49,7 +53,7 @@ void calc()
       {
         int _inside = 0;
         int _total = 0;
-        pthread_mutex_lock(&mutexLock);
+        lock = 0;
         for (int i = 0; i < TOTAL_THREADS; i++)
         {
           _inside += res[i];
@@ -58,7 +62,11 @@ void calc()
         inside = _inside;
         total = _total;
         pi = 4 * _inside / (double)_total;
-        pthread_mutex_unlock(&mutexLock);
+        if (fabs(pi - ACC_PI) < DELTA)
+        {
+          printf("afasdf\n");
+        }
+        lock = 1;
       }
     }
   }
@@ -68,7 +76,7 @@ int main()
 {
   struct timeval t1, t2;
   gettimeofday(&t1, NULL);
-  pthread_mutex_init(&mutexLock, NULL);
+
   calc();
 
   gettimeofday(&t2, NULL);
