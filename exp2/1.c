@@ -4,6 +4,7 @@
 #include <sys/time.h>
 #include <math.h>
 #include <pthread.h>
+#include <omp.h>
 
 #include "const.h"
 int generates(int total)
@@ -23,13 +24,14 @@ int total = 0;
 double pi = 0;
 
 pthread_mutex_t mutexLock;
-
+/**
+ * mutex多线程
+ */
 void calc()
 {
-  while (fabs(pi - ACC_PI) > DELTA)
+  while (fabs(pi - ACC_PI) > DELTA && total < 2e8)
   {
     int res = generates(BLOCK_SIZE);
-
     pthread_mutex_lock(&mutexLock);
     inside += res;
     total += BLOCK_SIZE;
@@ -47,7 +49,10 @@ int main()
 
   srand(SEED);
 
-  calc();
+#pragma omp parallel num_threads(TOTAL_THREADS)
+  {
+    calc();
+  }
 
   gettimeofday(&t2, NULL);
   printf("pi=%.10f; inside=%d; outside=%d\n", pi, inside, total);

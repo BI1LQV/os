@@ -20,7 +20,9 @@ int generates(int total)
 int inside = 0;
 int total = 0;
 double pi = 0;
-
+/**
+ * 纯单线程
+ */
 void calc()
 {
   while (fabs(pi - ACC_PI) > DELTA)
