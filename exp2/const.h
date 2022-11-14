@@ -1,3 +1,3 @@
 #define BLOCK_SIZE 1000
-#define DELTA 1e-6
+#define DELTA 1e-8
 #define ACC_PI 3.1415926575

@@ -17,23 +17,32 @@ int generates(int total)
   return count;
 }
 
+int inside = 0;
+int total = 0;
+double pi = 0;
+
+void calc()
+{
+  while (fabs(pi - ACC_PI) > DELTA)
+  {
+    int res = generates(BLOCK_SIZE);
+    inside += res;
+    total += BLOCK_SIZE;
+    pi = 4 * inside / (double)total;
+  }
+}
+
 int main()
 {
   struct timeval t1, t2;
   gettimeofday(&t1, NULL);
-  int inside = 0;
-  int total = 0;
-  double pi = 0;
+
   srand((unsigned)time(NULL));
-  while (fabs(pi - ACC_PI) > DELTA)
-  {
-    inside += generates(BLOCK_SIZE);
-    total += BLOCK_SIZE;
-    pi = 4 * inside / (double)total;
-  }
+
+  calc();
 
   gettimeofday(&t2, NULL);
-  printf("pi=%f; inside=%d; outside=%d\n", pi, inside, total);
+  printf("pi=%.10f; inside=%d; outside=%d\n", pi, inside, total);
   double timeCost = (t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0;
   printf("time cost: %f ms\n", timeCost);
   return 0;
