@@ -37,7 +37,7 @@ int main()
   struct timeval t1, t2;
   gettimeofday(&t1, NULL);
 
-  srand((unsigned)time(NULL));
+  srand(SEED);
 
   calc();
 

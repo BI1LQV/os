@@ -45,7 +45,7 @@ int main()
 
   pthread_mutex_init(&mutexLock, NULL);
 
-  srand((unsigned)time(NULL));
+  srand(SEED);
 
   calc();
 
