@@ -57,6 +57,7 @@ void calc()
       else
       {
         *resTarget += generates(BLOCK_SIZE, &seed);
+        seed += rand_r(&seed) / (double)RAND_MAX * 100;
         *totalTarget += BLOCK_SIZE;
       }
     }
