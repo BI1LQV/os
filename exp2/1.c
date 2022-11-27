@@ -55,7 +55,7 @@ int main()
   calc();
 
   gettimeofday(&t2, NULL);
-  printf("pi=%.10f; inside=%d; outside=%d\n", pi, inside, total);
+  printf("pi=%.10f; inside=%d; total=%d\n", pi, inside, total);
   double timeCost = (t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0;
   printf("time cost: %f ms\n", timeCost);
   return 0;
