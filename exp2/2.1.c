@@ -23,7 +23,6 @@ int inside = 0;
 int total = 0;
 double pi = 0;
 
-int lock = 1;
 /**
  * 无锁多线程
  */
@@ -32,28 +31,20 @@ void calc()
   int res[TOTAL_THREADS] = {0};
   int totalCount[TOTAL_THREADS] = {0};
 
-#pragma omp parallel num_threads(TOTAL_THREADS)
+#pragma omp parallel num_threads(TOTAL_THREADS + 1)
   {
-    unsigned int seed = omp_get_thread_num();
+    int threadId = omp_get_thread_num();
+    unsigned int seed = threadId;
 
-    int *resTarget = res + omp_get_thread_num();
-    int *totalTarget = totalCount + omp_get_thread_num();
-    int iterCount = 0;
+    int *resTarget = res + threadId;
+    int *totalTarget = totalCount + threadId;
+
     while (fabs(pi - ACC_PI) > DELTA && *totalTarget < MAX_ITER / TOTAL_THREADS)
     {
-      *resTarget += generates(BLOCK_SIZE, &seed);
-      while (lock == 0)
-      {
-        printf("locking\n");
-      }
-      *totalTarget += BLOCK_SIZE;
-      iterCount++;
-
-      if (iterCount % (TOTAL_THREADS * 100) == omp_get_thread_num())
+      if (TOTAL_THREADS == threadId) //最后一个线程
       {
         int _inside = 0;
         int _total = 0;
-        lock = 0;
         for (int i = 0; i < TOTAL_THREADS; i++)
         {
           _inside += res[i];
@@ -61,12 +52,12 @@ void calc()
         }
         inside = _inside;
         total = _total;
-        pi = 4 * _inside / (double)_total;
-        if (fabs(pi - ACC_PI) < DELTA)
-        {
-          printf("afasdf\n");
-        }
-        lock = 1;
+        pi = total > 0 ? 4 * _inside / (double)_total : 0;
+      }
+      else
+      {
+        *resTarget += generates(BLOCK_SIZE, &seed);
+        *totalTarget += BLOCK_SIZE;
       }
     }
   }
@@ -76,7 +67,6 @@ int main()
 {
   struct timeval t1, t2;
   gettimeofday(&t1, NULL);
-
   calc();
 
   gettimeofday(&t2, NULL);
