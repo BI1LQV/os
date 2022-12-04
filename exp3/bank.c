@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include <omp.h>
 #define true 1
 #define false 0
 
@@ -24,7 +25,9 @@ enum AllocateStatus
 typedef struct AllocateLog
 {
   enum ModifyType type;
+  int customId;
   enum AllocateStatus status;
+  int *request;
   int *safeList;
 } AllocateLog;
 
@@ -36,15 +39,15 @@ AllocateLog logList[LOG_LENGTH];
 int logListIdx = 0;
 pthread_mutex_t mutexLock;
 
-int returnWithEffect(enum ModifyType type, enum AllocateStatus status, int *safeList)
+int returnWithEffect(enum ModifyType type, int customer_num, enum AllocateStatus status, int *request, int *safeList)
 {
   if (type == Request && status == Success)
   {
-    logList[logListIdx++] = (AllocateLog){type, status, safeList};
+    logList[logListIdx++] = (AllocateLog){type, customer_num, status, request, safeList};
   }
   else
   {
-    logList[logListIdx++] = (AllocateLog){type, status};
+    logList[logListIdx++] = (AllocateLog){type, customer_num, status, request};
   }
   pthread_mutex_unlock(&mutexLock);
   return status;
@@ -85,9 +88,20 @@ void printLog(AllocateLog logList[])
     {
       break;
     }
-    printf("Type: %s, Status: %s",
+    printf("Custom: %d, Type: %s, Status: %s",
+           logList[i].customId,
            logList[i].type == Request ? "Request" : "Release",
            logList[i].status == Success ? "Success" : "Failure");
+    printf(", Request: [");
+    for (int j = 0; j < NUMBER_OF_RESOURCES; j++)
+    {
+      printf("%d", logList[i].request[j]);
+      if (j != NUMBER_OF_RESOURCES - 1)
+      {
+        printf(", ");
+      }
+    }
+    printf("]");
     if (logList[i].type == Request && logList[i].status == Success)
     {
       printf(", SafeList: [");
@@ -222,13 +236,13 @@ int request_resources(int customer_num, int request[])
 {
   pthread_mutex_lock(&mutexLock);
   RequestResponse res = __request_resources(customer_num, request);
-  return returnWithEffect(Request, res.status, res.safeList);
+  return returnWithEffect(Request, customer_num, res.status, request, res.safeList);
 }
 
 int release_resources(int customer_num, int request[])
 {
   pthread_mutex_lock(&mutexLock);
-  return returnWithEffect(Release, __release_resources(customer_num, request), NULL);
+  return returnWithEffect(Release, customer_num, __release_resources(customer_num, request), request, NULL);
 }
 
 int main(int argc, char *argv[])
@@ -260,6 +274,7 @@ int main(int argc, char *argv[])
   maximum[4][2] = 3;
 
   pthread_mutex_init(&mutexLock, NULL);
+  srand(1);
   for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++)
   {
     for (int j = 0; j < NUMBER_OF_RESOURCES; j++)
@@ -268,7 +283,29 @@ int main(int argc, char *argv[])
     }
   }
   printInit(available, maximum);
-  request_resources(0, (int[]){1, 2, 0});
+#pragma omp parallel num_threads(NUMBER_OF_CUSTOMERS)
+  {
+    int customer_num = omp_get_thread_num();
+
+    if (rand() % 2)
+    {
+      int *request = malloc(sizeof(int) * NUMBER_OF_RESOURCES);
+      for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
+      {
+        request[i] = rand() % (need[customer_num][i] + 1);
+      }
+      request_resources(customer_num, request);
+    }
+    else
+    {
+      int *release = malloc(sizeof(int) * NUMBER_OF_RESOURCES);
+      for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
+      {
+        release[i] = rand() % (allocation[customer_num][i] + 1);
+      }
+      release_resources(customer_num, release);
+    }
+  }
   printLog(logList);
   return 0;
 }
