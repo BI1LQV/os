@@ -10,6 +10,7 @@
 #define NUMBER_OF_RESOURCES 3
 #define CRMatrix [NUMBER_OF_CUSTOMERS][NUMBER_OF_RESOURCES]
 #define LOG_LENGTH 5000
+#define NUMBER_OF_TRY_COUNT 5
 enum ModifyType
 {
   Request = -1,
@@ -82,6 +83,7 @@ void printInit(int available[], int maximum CRMatrix)
 
 void printLog(AllocateLog logList[])
 {
+  printf("=====start print log=====\n");
   for (int i = 0; i < LOG_LENGTH; i++)
   {
     if (logList[i].type == 0)
@@ -213,6 +215,10 @@ RequestResponse __request_resources(int customer_num, int request[])
       request[i] *= -1;
     }
     modifyResources(customer_num, request, Request);
+    for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
+    {
+      request[i] *= -1;
+    }
     return (RequestResponse){Failure, NULL};
   }
   return (RequestResponse){Success, isSafePtr};
@@ -286,24 +292,26 @@ int main(int argc, char *argv[])
 #pragma omp parallel num_threads(NUMBER_OF_CUSTOMERS)
   {
     int customer_num = omp_get_thread_num();
-
-    if (rand() % 2)
+    for (int i = 0; i < NUMBER_OF_TRY_COUNT; i++)
     {
-      int *request = malloc(sizeof(int) * NUMBER_OF_RESOURCES);
-      for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
+      if (rand() % 2)
       {
-        request[i] = rand() % (need[customer_num][i] + 1);
+        int *request = malloc(sizeof(int) * NUMBER_OF_RESOURCES);
+        for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
+        {
+          request[i] = rand() % (need[customer_num][i] + 1);
+        }
+        request_resources(customer_num, request);
       }
-      request_resources(customer_num, request);
-    }
-    else
-    {
-      int *release = malloc(sizeof(int) * NUMBER_OF_RESOURCES);
-      for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
+      else
       {
-        release[i] = rand() % (allocation[customer_num][i] + 1);
+        int *release = malloc(sizeof(int) * NUMBER_OF_RESOURCES);
+        for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
+        {
+          release[i] = rand() % (allocation[customer_num][i] + 1);
+        }
+        release_resources(customer_num, release);
       }
-      release_resources(customer_num, release);
     }
   }
   printLog(logList);
