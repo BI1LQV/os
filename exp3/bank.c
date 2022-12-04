@@ -84,6 +84,20 @@ void printInit(int available[], int maximum CRMatrix)
   }
 }
 
+void printArray(int *arr, int length)
+{
+  printf("[");
+  for (int j = 0; j < length; j++)
+  {
+    printf("%d", arr[j]);
+    if (j != length - 1)
+    {
+      printf(", ");
+    }
+  }
+  printf("]");
+}
+
 void printLog(AllocateLog logList[])
 {
   printf("=====start print log=====\n");
@@ -97,42 +111,17 @@ void printLog(AllocateLog logList[])
            logList[i].customId,
            logList[i].type == Request ? "Request" : "Release",
            logList[i].status == Success ? "Success" : "Failure");
-    printf(", Request: [");
-    for (int j = 0; j < NUMBER_OF_RESOURCES; j++)
-    {
-      printf("%d", logList[i].request[j]);
-      if (j != NUMBER_OF_RESOURCES - 1)
-      {
-        printf(", ");
-      }
-    }
-    printf("], CurAvailable: [");
-    for (int j = 0; j < NUMBER_OF_RESOURCES; j++)
-    {
-      printf("%d", logList[i].curAvailable[j]);
-      if (j != NUMBER_OF_RESOURCES - 1)
-      {
-        printf(", ");
-      }
-    }
-    printf("]");
+    printf(", Request: ");
+    printArray(logList[i].request, NUMBER_OF_RESOURCES);
+    printf(", CurAvailable: ");
+    printArray(logList[i].curAvailable, NUMBER_OF_RESOURCES);
+
     if (logList[i].type == Request && logList[i].status == Success)
     {
-      printf(", SafeList: [");
-      for (int j = 0; j < NUMBER_OF_CUSTOMERS; j++)
-      {
-        printf("%d", logList[i].safeList[j]);
-        if (j != NUMBER_OF_CUSTOMERS - 1)
-        {
-          printf(", ");
-        }
-      }
-      printf("]\n");
+      printf(", SafeList: ");
+      printArray(logList[i].safeList, NUMBER_OF_CUSTOMERS);
     }
-    else
-    {
-      printf("\n");
-    }
+    printf("\n");
   }
 }
 
