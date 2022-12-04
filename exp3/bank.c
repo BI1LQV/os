@@ -200,13 +200,13 @@ typedef struct RequestResponse
 RequestResponse __request_resources(int customer_num, int request[])
 {
   // 检查申请合法性
-  for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
+  if (
+      isA1AllGreaterA2(request, need[customer_num], NUMBER_OF_RESOURCES) ||
+      isA1AllGreaterA2(request, available, NUMBER_OF_RESOURCES))
   {
-    if (request[i] > need[customer_num][i] || request[i] > available[i])
-    {
-      return (RequestResponse){Failure, NULL};
-    }
+    return (RequestResponse){Failure, NULL};
   }
+
   modifyResources(customer_num, request, Request);
   int *isSafePtr = isSafe(request);
   if (isSafePtr == NULL)
@@ -220,13 +220,12 @@ RequestResponse __request_resources(int customer_num, int request[])
 enum AllocateStatus __release_resources(int customer_num, int release[])
 {
   // 检查释放合法性
-  for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
+
+  if (isA1AllGreaterA2(release, allocation[customer_num], NUMBER_OF_RESOURCES))
   {
-    if (release[i] > allocation[customer_num][i])
-    {
-      return Failure;
-    }
+    return Failure;
   }
+
   modifyResources(customer_num, release, Release);
   return Success;
 }
@@ -241,7 +240,9 @@ int request_resources(int customer_num, int request[])
 int release_resources(int customer_num, int request[])
 {
   pthread_mutex_lock(&mutexLock);
-  return returnWithEffect(Release, customer_num, __release_resources(customer_num, request), request, NULL);
+  return returnWithEffect(Release, customer_num,
+                          __release_resources(customer_num, request),
+                          request, NULL);
 }
 
 int main(int argc, char *argv[])
@@ -273,26 +274,22 @@ int main(int argc, char *argv[])
   maximum[4][2] = 3;
 
   pthread_mutex_init(&mutexLock, NULL);
-  srand(1);
-  for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++)
-  {
-    for (int j = 0; j < NUMBER_OF_RESOURCES; j++)
-    {
-      need[i][j] = maximum[i][j];
-    }
-  }
+
+  memcpy(need, maximum, sizeof(need));
+
   printInit(available, maximum);
 #pragma omp parallel num_threads(NUMBER_OF_CUSTOMERS)
   {
     int customer_num = omp_get_thread_num();
+    unsigned int seed = (unsigned int)omp_get_thread_num();
     for (int i = 0; i < NUMBER_OF_TRY_COUNT; i++)
     {
-      if (rand() % 2)
+      if (rand_r(&seed) % 2)
       {
         int *request = malloc(sizeof(int) * NUMBER_OF_RESOURCES);
         for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
         {
-          request[i] = rand() % (need[customer_num][i] + 1);
+          request[i] = rand_r(&seed) % (need[customer_num][i] + 1);
         }
         request_resources(customer_num, request);
       }
@@ -301,7 +298,7 @@ int main(int argc, char *argv[])
         int *release = malloc(sizeof(int) * NUMBER_OF_RESOURCES);
         for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
         {
-          release[i] = rand() % (allocation[customer_num][i] + 1);
+          release[i] = rand_r(&seed) % (allocation[customer_num][i] + 1);
         }
         release_resources(customer_num, release);
       }
