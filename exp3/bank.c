@@ -54,6 +54,7 @@ int returnWithEffect(enum ModifyType type, int customer_num, enum AllocateStatus
 
 void printInit(int available[], int maximum CRMatrix)
 {
+  printf("=====start print init info=====\n");
   printf("资源类型   :");
   for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
   {
@@ -240,31 +241,25 @@ int release_resources(int customer_num, int request[])
 
 int main(int argc, char *argv[])
 {
+  if (argc - 1 != NUMBER_OF_RESOURCES)
+  {
+    printf("输入资源数量不正确,输入了%d个\n", argc - 1);
+    return 1;
+  }
   for (int i = 1; i < argc; i++)
   {
-    // available[i - 1] = atoi(argv[i]);
+    available[i - 1] = atoi(argv[i]);
   }
-  available[0] = 10;
-  available[1] = 5;
-  available[2] = 7;
 
-  maximum[0][0] = 7;
-  maximum[0][1] = 5;
-  maximum[0][2] = 3;
-  maximum[1][0] = 3;
-  maximum[1][1] = 2;
-  maximum[1][2] = 2;
+  for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++)
+  {
 
-  maximum[2][0] = 9;
-  maximum[2][1] = 0;
-  maximum[2][2] = 2;
-  maximum[3][0] = 2;
-  maximum[3][1] = 2;
-  maximum[3][2] = 2;
-
-  maximum[4][0] = 4;
-  maximum[4][1] = 3;
-  maximum[4][2] = 3;
+    for (int j = 0; j < NUMBER_OF_RESOURCES; j++)
+    {
+      printf("请输入线程%d对资源%c最大需求: ", i + 1, 'A' + j);
+      scanf("%d", &maximum[i][j]);
+    }
+  }
 
   pthread_mutex_init(&mutexLock, NULL);
 
