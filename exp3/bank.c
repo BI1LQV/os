@@ -130,7 +130,7 @@ int *isSafe(int *request)
   int *_safeList = malloc(sizeof(int) * NUMBER_OF_CUSTOMERS);
   int _safeListIdx = 0;
   memcpy(work, available, sizeof(int) * NUMBER_OF_RESOURCES);
-  for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++)
+  for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
   {
     work[i] -= request[i];
   }
