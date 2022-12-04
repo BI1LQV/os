@@ -25,7 +25,7 @@ typedef struct AllocateLog
 {
   enum ModifyType type;
   enum AllocateStatus status;
-  int safeList[NUMBER_OF_CUSTOMERS];
+  int *safeList;
 } AllocateLog;
 
 int available[NUMBER_OF_RESOURCES];
@@ -40,8 +40,7 @@ int returnWithEffect(enum ModifyType type, enum AllocateStatus status, int *safe
 {
   if (type == Request && status == Success)
   {
-    logList[logListIdx++] = (AllocateLog){type, status, *safeList};
-    free(safeList);
+    logList[logListIdx++] = (AllocateLog){type, status, safeList};
   }
   else
   {
@@ -86,9 +85,26 @@ void printLog(AllocateLog logList[])
     {
       break;
     }
-    printf("Type: %s, Status: %s\n",
+    printf("Type: %s, Status: %s",
            logList[i].type == Request ? "Request" : "Release",
            logList[i].status == Success ? "Success" : "Failure");
+    if (logList[i].type == Request && logList[i].status == Success)
+    {
+      printf(", SafeList: [");
+      for (int j = 0; j < NUMBER_OF_CUSTOMERS; j++)
+      {
+        printf("%d", logList[i].safeList[j]);
+        if (j != NUMBER_OF_CUSTOMERS - 1)
+        {
+          printf(", ");
+        }
+      }
+      printf("]\n");
+    }
+    else
+    {
+      printf("\n");
+    }
   }
 }
 
@@ -127,13 +143,9 @@ int *isSafe(int *request)
 {
   int work[NUMBER_OF_RESOURCES];
   int finish[NUMBER_OF_CUSTOMERS];
-  int *_safeList = malloc(sizeof(int) * NUMBER_OF_CUSTOMERS);
-  int _safeListIdx = 0;
+  int *safeList = malloc(sizeof(int) * NUMBER_OF_CUSTOMERS);
+  int safeListIdx = 0;
   memcpy(work, available, sizeof(int) * NUMBER_OF_RESOURCES);
-  for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
-  {
-    work[i] -= request[i];
-  }
   for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++)
   {
     finish[i] = false;
@@ -147,13 +159,14 @@ int *isSafe(int *request)
         work[j] += allocation[i][j];
       }
       finish[i] = true;
-      _safeList[_safeListIdx++] = i;
+      safeList[safeListIdx++] = i;
       i = -1;
     }
   }
+
   if (sum(finish, NUMBER_OF_CUSTOMERS) == NUMBER_OF_CUSTOMERS)
   {
-    return _safeList;
+    return safeList;
   }
   else
   {
@@ -177,12 +190,17 @@ RequestResponse __request_resources(int customer_num, int request[])
       return (RequestResponse){Failure, NULL};
     }
   }
+  modifyResources(customer_num, request, Request);
   int *isSafePtr = isSafe(request);
   if (isSafePtr == NULL)
   {
+    for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
+    {
+      request[i] *= -1;
+    }
+    modifyResources(customer_num, request, Request);
     return (RequestResponse){Failure, NULL};
   }
-  modifyResources(customer_num, request, Request);
   return (RequestResponse){Success, isSafePtr};
 }
 
@@ -220,15 +238,32 @@ int main(int argc, char *argv[])
     // available[i - 1] = atoi(argv[i]);
   }
   available[0] = 10;
-  available[1] = 20;
-  available[2] = 13;
-  srand(5);
+  available[1] = 5;
+  available[2] = 7;
+
+  maximum[0][0] = 7;
+  maximum[0][1] = 5;
+  maximum[0][2] = 3;
+  maximum[1][0] = 3;
+  maximum[1][1] = 2;
+  maximum[1][2] = 2;
+
+  maximum[2][0] = 9;
+  maximum[2][1] = 0;
+  maximum[2][2] = 2;
+  maximum[3][0] = 2;
+  maximum[3][1] = 2;
+  maximum[3][2] = 2;
+
+  maximum[4][0] = 4;
+  maximum[4][1] = 3;
+  maximum[4][2] = 3;
+
   pthread_mutex_init(&mutexLock, NULL);
   for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++)
   {
     for (int j = 0; j < NUMBER_OF_RESOURCES; j++)
     {
-      maximum[i][j] = rand() % (available[j] + 1);
       need[i][j] = maximum[i][j];
     }
   }
