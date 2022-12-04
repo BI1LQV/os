@@ -30,6 +30,7 @@ typedef struct AllocateLog
   enum AllocateStatus status;
   int *request;
   int *safeList;
+  int *curAvailable;
 } AllocateLog;
 
 int available[NUMBER_OF_RESOURCES];
@@ -42,13 +43,15 @@ pthread_mutex_t mutexLock;
 
 int returnWithEffect(enum ModifyType type, int customer_num, enum AllocateStatus status, int *request, int *safeList)
 {
+  int *curAvailable = malloc(sizeof(int) * NUMBER_OF_RESOURCES);
   if (type == Request && status == Success)
   {
-    logList[logListIdx++] = (AllocateLog){type, customer_num, status, request, safeList};
+    memcpy(curAvailable, available, sizeof(int) * NUMBER_OF_RESOURCES);
+    logList[logListIdx++] = (AllocateLog){type, customer_num, status, request, safeList, curAvailable};
   }
   else
   {
-    logList[logListIdx++] = (AllocateLog){type, customer_num, status, request};
+    logList[logListIdx++] = (AllocateLog){type, customer_num, status, request, NULL, curAvailable};
   }
   pthread_mutex_unlock(&mutexLock);
   return status;
@@ -98,6 +101,15 @@ void printLog(AllocateLog logList[])
     for (int j = 0; j < NUMBER_OF_RESOURCES; j++)
     {
       printf("%d", logList[i].request[j]);
+      if (j != NUMBER_OF_RESOURCES - 1)
+      {
+        printf(", ");
+      }
+    }
+    printf("], CurAvailable: [");
+    for (int j = 0; j < NUMBER_OF_RESOURCES; j++)
+    {
+      printf("%d", logList[i].curAvailable[j]);
       if (j != NUMBER_OF_RESOURCES - 1)
       {
         printf(", ");
@@ -210,15 +222,7 @@ RequestResponse __request_resources(int customer_num, int request[])
   int *isSafePtr = isSafe(request);
   if (isSafePtr == NULL)
   {
-    for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
-    {
-      request[i] *= -1;
-    }
-    modifyResources(customer_num, request, Request);
-    for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
-    {
-      request[i] *= -1;
-    }
+    modifyResources(customer_num, request, Release);
     return (RequestResponse){Failure, NULL};
   }
   return (RequestResponse){Success, isSafePtr};
