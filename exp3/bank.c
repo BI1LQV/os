@@ -9,8 +9,8 @@
 int NUMBER_OF_CUSTOMERS;
 int NUMBER_OF_RESOURCES;
 
-#define LOG_LENGTH 500
-#define NUMBER_OF_TRY_COUNT 5
+#define LOG_LENGTH 10000
+#define NUMBER_OF_TRY_COUNT 1000
 enum ModifyType
 {
   Request = -1,
@@ -107,10 +107,11 @@ void printLog(AllocateLog logList[])
     {
       break;
     }
-    printf("Customer: %d, Type: %s, Status: %s",
+    printf("i=%d, tid: %d, Type: %s, Status: %s",
+           i,
            logList[i].customId,
            logList[i].type == Request ? "Request" : "Release",
-           logList[i].status == Success ? "Success" : "Failure");
+           logList[i].status == Success ? "Succ" : "Fail");
     printf(", Request: ");
     printArray(logList[i].request, NUMBER_OF_RESOURCES);
     printf(", CurAvailable: ");
@@ -308,6 +309,11 @@ int main(int argc, char *argv[])
         {
           request[i] = rand_r(&seed) % (need[customer_num * NUMBER_OF_RESOURCES + i] + 1);
         }
+        if (sum(request, NUMBER_OF_RESOURCES) == 0)
+        {
+          i--;
+          continue;
+        }
         request_resources(customer_num, request);
       }
       else
@@ -317,6 +323,11 @@ int main(int argc, char *argv[])
         for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
         {
           release[i] = rand_r(&seed) % (allocation[customer_num * NUMBER_OF_RESOURCES + i] + 1);
+        }
+        if (sum(release, NUMBER_OF_RESOURCES) == 0)
+        {
+          i--;
+          continue;
         }
         release_resources(customer_num, release);
       }
