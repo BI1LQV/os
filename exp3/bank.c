@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <string.h>
+#define true 1
+#define false 0
 
 #define NUMBER_OF_CUSTOMERS 5
 #define NUMBER_OF_RESOURCES 3
@@ -22,7 +25,7 @@ typedef struct AllocateLog
 {
   enum ModifyType type;
   enum AllocateStatus status;
-  int safeList[5];
+  int safeList[NUMBER_OF_CUSTOMERS];
 } AllocateLog;
 
 int available[NUMBER_OF_RESOURCES];
@@ -33,9 +36,17 @@ AllocateLog logList[LOG_LENGTH];
 int logListIdx = 0;
 pthread_mutex_t mutexLock;
 
-int returnWithEffect(enum ModifyType type, enum AllocateStatus status)
+int returnWithEffect(enum ModifyType type, enum AllocateStatus status, int *safeList)
 {
-  logList[logListIdx++] = (AllocateLog){type, status};
+  if (type == Request && status == Success)
+  {
+    logList[logListIdx++] = (AllocateLog){type, status, *safeList};
+    free(safeList);
+  }
+  else
+  {
+    logList[logListIdx++] = (AllocateLog){type, status};
+  }
   pthread_mutex_unlock(&mutexLock);
   return status;
 }
@@ -90,19 +101,89 @@ void modifyResources(int customer_num, int request[], enum ModifyType type)
     need[customer_num][i] += type * request[i];
   }
 }
+int sum(int arr[], int length)
+{
+  int sum = 0;
+  for (int i = 0; i < length; i++)
+  {
+    sum += arr[i];
+  }
+  return sum;
+}
 
-enum AllocateStatus __request_resources(int customer_num, int request[])
+int isA1AllGreaterA2(int arr1[], int arr2[], int length)
+{
+  for (int i = 0; i < length; i++)
+  {
+    if (arr1[i] < arr2[i])
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+int *isSafe(int *request)
+{
+  int work[NUMBER_OF_RESOURCES];
+  int finish[NUMBER_OF_CUSTOMERS];
+  int *_safeList = malloc(sizeof(int) * NUMBER_OF_CUSTOMERS);
+  int _safeListIdx = 0;
+  memcpy(work, available, sizeof(int) * NUMBER_OF_RESOURCES);
+  for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++)
+  {
+    work[i] -= request[i];
+  }
+  for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++)
+  {
+    finish[i] = false;
+  }
+  for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++)
+  {
+    if (!finish[i] && isA1AllGreaterA2(work, need[i], NUMBER_OF_RESOURCES))
+    {
+      for (int j = 0; j < NUMBER_OF_RESOURCES; j++)
+      {
+        work[j] += allocation[i][j];
+      }
+      finish[i] = true;
+      _safeList[_safeListIdx++] = i;
+      i = -1;
+    }
+  }
+  if (sum(finish, NUMBER_OF_CUSTOMERS) == NUMBER_OF_CUSTOMERS)
+  {
+    return _safeList;
+  }
+  else
+  {
+    return NULL;
+  }
+}
+
+typedef struct RequestResponse
+{
+  enum AllocateStatus status;
+  int *safeList;
+} RequestResponse;
+
+RequestResponse __request_resources(int customer_num, int request[])
 {
   // 检查申请合法性
   for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
   {
     if (request[i] > need[customer_num][i] || request[i] > available[i])
     {
-      return Failure;
+      return (RequestResponse){Failure, NULL};
     }
   }
+  int *isSafePtr = isSafe(request);
+  if (isSafePtr == NULL)
+  {
+    return (RequestResponse){Failure, NULL};
+  }
   modifyResources(customer_num, request, Request);
-  return Success;
+  return (RequestResponse){Success, isSafePtr};
 }
 
 enum AllocateStatus __release_resources(int customer_num, int release[])
@@ -122,13 +203,14 @@ enum AllocateStatus __release_resources(int customer_num, int release[])
 int request_resources(int customer_num, int request[])
 {
   pthread_mutex_lock(&mutexLock);
-  return returnWithEffect(Request, __request_resources(customer_num, request));
+  RequestResponse res = __request_resources(customer_num, request);
+  return returnWithEffect(Request, res.status, res.safeList);
 }
 
 int release_resources(int customer_num, int request[])
 {
   pthread_mutex_lock(&mutexLock);
-  return returnWithEffect(Release, __release_resources(customer_num, request));
+  return returnWithEffect(Release, __release_resources(customer_num, request), NULL);
 }
 
 int main(int argc, char *argv[])
