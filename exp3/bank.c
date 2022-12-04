@@ -10,7 +10,7 @@
 #define NUMBER_OF_RESOURCES 3
 #define CRMatrix [NUMBER_OF_CUSTOMERS][NUMBER_OF_RESOURCES]
 #define LOG_LENGTH 5000
-#define NUMBER_OF_TRY_COUNT 5
+#define NUMBER_OF_TRY_COUNT 50
 enum ModifyType
 {
   Request = -1,
@@ -44,15 +44,10 @@ pthread_mutex_t mutexLock;
 int returnWithEffect(enum ModifyType type, int customer_num, enum AllocateStatus status, int *request, int *safeList)
 {
   int *curAvailable = malloc(sizeof(int) * NUMBER_OF_RESOURCES);
-  if (type == Request && status == Success)
-  {
-    memcpy(curAvailable, available, sizeof(int) * NUMBER_OF_RESOURCES);
-    logList[logListIdx++] = (AllocateLog){type, customer_num, status, request, safeList, curAvailable};
-  }
-  else
-  {
-    logList[logListIdx++] = (AllocateLog){type, customer_num, status, request, NULL, curAvailable};
-  }
+  memcpy(curAvailable, available, sizeof(int) * NUMBER_OF_RESOURCES);
+
+  logList[logListIdx++] = (AllocateLog){type, customer_num, status, request, safeList, curAvailable};
+
   pthread_mutex_unlock(&mutexLock);
   return status;
 }
@@ -107,7 +102,7 @@ void printLog(AllocateLog logList[])
     {
       break;
     }
-    printf("Custom: %d, Type: %s, Status: %s",
+    printf("Customer: %d, Type: %s, Status: %s",
            logList[i].customId,
            logList[i].type == Request ? "Request" : "Release",
            logList[i].status == Success ? "Success" : "Failure");
@@ -201,33 +196,31 @@ RequestResponse __request_resources(int customer_num, int request[])
 {
   // 检查申请合法性
   if (
-      isA1AllGreaterA2(request, need[customer_num], NUMBER_OF_RESOURCES) ||
-      isA1AllGreaterA2(request, available, NUMBER_OF_RESOURCES))
+      isA1AllGreaterA2(need[customer_num], request, NUMBER_OF_RESOURCES) &&
+      isA1AllGreaterA2(available, request, NUMBER_OF_RESOURCES))
   {
-    return (RequestResponse){Failure, NULL};
+    modifyResources(customer_num, request, Request);
+    int *isSafePtr = isSafe(request);
+    if (isSafePtr == NULL)
+    {
+      modifyResources(customer_num, request, Release);
+      return (RequestResponse){Failure, NULL};
+    }
+    return (RequestResponse){Success, isSafePtr};
   }
-
-  modifyResources(customer_num, request, Request);
-  int *isSafePtr = isSafe(request);
-  if (isSafePtr == NULL)
-  {
-    modifyResources(customer_num, request, Release);
-    return (RequestResponse){Failure, NULL};
-  }
-  return (RequestResponse){Success, isSafePtr};
+  return (RequestResponse){Failure, NULL};
 }
 
 enum AllocateStatus __release_resources(int customer_num, int release[])
 {
   // 检查释放合法性
 
-  if (isA1AllGreaterA2(release, allocation[customer_num], NUMBER_OF_RESOURCES))
+  if (isA1AllGreaterA2(allocation[customer_num], release, NUMBER_OF_RESOURCES))
   {
-    return Failure;
+    modifyResources(customer_num, release, Release);
+    return Success;
   }
-
-  modifyResources(customer_num, release, Release);
-  return Success;
+  return Failure;
 }
 
 int request_resources(int customer_num, int request[])
