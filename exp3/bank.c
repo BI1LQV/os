@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #define NUMBER_OF_CUSTOMERS 5
 #define NUMBER_OF_RESOURCES 3
@@ -30,10 +31,12 @@ int allocation CRMatrix;
 int need CRMatrix;
 AllocateLog logList[LOG_LENGTH];
 int logListIdx = 0;
+pthread_mutex_t mutexLock;
 
 int returnWithEffect(enum ModifyType type, enum AllocateStatus status)
 {
   logList[logListIdx++] = (AllocateLog){type, status};
+  pthread_mutex_unlock(&mutexLock);
   return status;
 }
 
@@ -72,7 +75,7 @@ void printLog(AllocateLog logList[])
     {
       break;
     }
-    printf("Type: %s, Status: %s, SafeList: \n",
+    printf("Type: %s, Status: %s\n",
            logList[i].type == Request ? "Request" : "Release",
            logList[i].status == Success ? "Success" : "Failure");
   }
@@ -90,7 +93,7 @@ void modifyResources(int customer_num, int request[], enum ModifyType type)
 
 enum AllocateStatus __request_resources(int customer_num, int request[])
 {
-  // check if request is valid
+  // 检查申请合法性
   for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
   {
     if (request[i] > need[customer_num][i] || request[i] > available[i])
@@ -98,14 +101,13 @@ enum AllocateStatus __request_resources(int customer_num, int request[])
       return Failure;
     }
   }
-  // if valid, update available, allocation, and need
   modifyResources(customer_num, request, Request);
   return Success;
 }
 
 enum AllocateStatus __release_resources(int customer_num, int release[])
 {
-  // check if release is valid
+  // 检查释放合法性
   for (int i = 0; i < NUMBER_OF_RESOURCES; i++)
   {
     if (release[i] > allocation[customer_num][i])
@@ -113,18 +115,19 @@ enum AllocateStatus __release_resources(int customer_num, int release[])
       return Failure;
     }
   }
-  // if valid, update available, allocation, and need
   modifyResources(customer_num, release, Release);
   return Success;
 }
 
 int request_resources(int customer_num, int request[])
 {
+  pthread_mutex_lock(&mutexLock);
   return returnWithEffect(Request, __request_resources(customer_num, request));
 }
 
 int release_resources(int customer_num, int request[])
 {
+  pthread_mutex_lock(&mutexLock);
   return returnWithEffect(Release, __release_resources(customer_num, request));
 }
 
@@ -138,6 +141,7 @@ int main(int argc, char *argv[])
   available[1] = 20;
   available[2] = 13;
   srand(5);
+  pthread_mutex_init(&mutexLock, NULL);
   for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++)
   {
     for (int j = 0; j < NUMBER_OF_RESOURCES; j++)
