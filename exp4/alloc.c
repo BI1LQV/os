@@ -10,8 +10,8 @@ typedef enum boolean
 
 typedef struct PageLog
 {
-  int *pageList;
   boolean isPageFault;
+  int pageList[0];
 } PageLog;
 
 int REQUEST_NUM = 0;
@@ -19,12 +19,10 @@ int PAGE_NUM = 0;
 
 int *REQUEST_TARGET_LIST;
 
-PageLog *pageLogList;
+PageLog **pageLogList;
 
 void init()
 {
-  float b;
-
   // init REQUEST_NUM,PAGE_NUM
   printf("请输入请求数量：");
   scanf("%d", &REQUEST_NUM);
@@ -37,7 +35,12 @@ void init()
     *(REQUEST_TARGET_LIST + i) = rand() % 10;
   }
   // init pageLogList
-  pageLogList = malloc(sizeof(PageLog) * REQUEST_NUM);
+  pageLogList = malloc(sizeof(PageLog *) * REQUEST_NUM);
+  for (int i = 0; i < REQUEST_NUM; i++)
+  {
+    pageLogList[i] = malloc(sizeof(PageLog) + sizeof(int) * PAGE_NUM);
+  }
+  srand(0);
 }
 
 typedef struct FifoNode
@@ -46,23 +49,59 @@ typedef struct FifoNode
   struct FifoNode *next;
 } FifoNode;
 
+void printLog()
+{
+  for (int i = 0; i < REQUEST_NUM; i++)
+  {
+    printf("请求%d,请求页%d,新页面帧:", i + 1, REQUEST_TARGET_LIST[i]);
+    for (int j = 0; j < PAGE_NUM; j++)
+    {
+      printf("%d ", pageLogList[i]->pageList[j]);
+    }
+    printf(pageLogList[i]->isPageFault ? ",发生缺页\n" : "\n");
+  }
+}
+
 void FIFO()
 {
   // init cycle link list
   FifoNode *curNode = malloc(sizeof(FifoNode));
-  *curNode = (FifoNode){0, NULL};
+  *curNode = (FifoNode){-1, NULL};
   FifoNode *firstNode = curNode;
   for (int i = 1; i < PAGE_NUM; i++)
   {
     FifoNode *newNode = malloc(sizeof(FifoNode));
-    *newNode = (FifoNode){i, curNode};
+    *newNode = (FifoNode){-1, curNode};
     curNode = newNode;
   }
   firstNode->next = curNode;
 
   for (int i = 0; i < REQUEST_NUM; i++)
   {
-    printf("%d\n", REQUEST_TARGET_LIST[i]);
+    boolean found = false;
+    FifoNode *searcher = curNode;
+    for (int j = 0; j < PAGE_NUM; j++)
+    {
+      if (searcher->page == *(REQUEST_TARGET_LIST + i))
+      {
+        found = true;
+        break;
+      }
+      searcher = searcher->next;
+    }
+    if (!found)
+    {
+      curNode->page = *(REQUEST_TARGET_LIST + i);
+      curNode = curNode->next;
+    }
+
+    // take log
+    pageLogList[i]->isPageFault = !found;
+    for (int j = 0; j < PAGE_NUM; j++)
+    {
+      pageLogList[i]->pageList[j] = curNode->page;
+      curNode = curNode->next;
+    }
   }
 }
 
@@ -70,44 +109,9 @@ int main()
 {
   init();
   FIFO();
+  printLog();
   return 0;
 }
-
-// void FIFO() // FIFO算法
-// {
-//   init();
-//   int i, j = 1, n = 20, k, f, m;
-//   stack[0][0] = numbers[0];
-
-//   for (i = 1; i < 20; i++)
-//   {
-//     f = 0;
-//     for (m = 0; m < nums; m++)
-//     {
-//       stack[i][m] = stack[i - 1][m];
-//     }
-//     for (k = 0; k < nums; k++)
-//     {
-//       if (stack[i][k] == numbers[i])
-//       {
-//         n--;
-//         f = 1;
-//         break;
-//       }
-//     }
-//     if (f == 0)
-//     {
-//       stack[i][j] = numbers[i];
-//       j++;
-//     }
-//     if (j == nums)
-//       j = 0;
-//   }
-//   printf("\n");
-//   printf("FIFO算法：\n");
-//   print();
-//   printf("缺页错误数目为：%d\n", n);
-// }
 
 // void LRU() // LRU算法
 // {
