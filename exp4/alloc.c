@@ -43,12 +43,6 @@ void init()
   srand(0);
 }
 
-typedef struct FifoNode
-{
-  int page;
-  struct FifoNode *next;
-} FifoNode;
-
 void printLog()
 {
   for (int i = 0; i < REQUEST_NUM; i++)
@@ -62,6 +56,11 @@ void printLog()
   }
 }
 
+typedef struct FifoNode
+{
+  int page;
+  struct FifoNode *next;
+} FifoNode;
 void FIFO()
 {
   // init cycle link list
@@ -105,10 +104,87 @@ void FIFO()
   }
 }
 
+typedef struct LruNode
+{
+  int page;
+  struct LruNode *next;
+  struct LruNode *prev;
+} LruNode;
+
+void LRU()
+{
+  // init lru link list
+  LruNode *firstNode = malloc(sizeof(LruNode));
+  LruNode *preNode = firstNode;
+  firstNode->page = -1;
+  firstNode->prev = NULL;
+  for (int i = 1; i < PAGE_NUM; i++)
+  {
+    LruNode *newNode = malloc(sizeof(LruNode));
+    newNode->page = -1;
+    newNode->prev = preNode;
+    newNode->next = NULL;
+    preNode->next = newNode;
+    preNode = newNode;
+  }
+  LruNode *lastNode = preNode;
+
+  for (int i = 0; i < REQUEST_NUM; i++)
+  {
+    boolean found = false;
+    LruNode *searcher = firstNode;
+    for (int j = 0; j < PAGE_NUM; j++)
+    {
+      if (searcher->page == *(REQUEST_TARGET_LIST + i))
+      {
+        found = true;
+        // swap searcher and head
+        if (searcher != firstNode)
+        {
+          searcher->prev->next = searcher->next;
+          if (searcher != lastNode)
+          {
+            searcher->next->prev = searcher->prev;
+          }
+          searcher->next = firstNode;
+          searcher->prev = NULL;
+          firstNode->prev = searcher;
+          firstNode = searcher;
+        }
+        break;
+      }
+      searcher = searcher->next;
+    }
+
+    if (!found)
+    {
+      lastNode->page = *(REQUEST_TARGET_LIST + i);
+      // swap lastnode and head
+      lastNode->next = firstNode;
+      firstNode->prev = lastNode;
+      firstNode = lastNode;
+      LruNode *tmp = lastNode->prev;
+      lastNode->prev = NULL;
+      lastNode = tmp;
+    }
+
+    // take log
+    pageLogList[i]->isPageFault = !found;
+    searcher = firstNode;
+    for (int i = 0; i < PAGE_NUM; i++)
+    {
+      pageLogList[i]->pageList[i] = searcher->page;
+      searcher = searcher->next;
+    }
+  }
+}
+
 int main()
 {
   init();
-  FIFO();
+  // FIFO();
+  // printLog();
+  LRU();
   printLog();
   return 0;
 }
