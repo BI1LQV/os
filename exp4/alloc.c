@@ -171,9 +171,9 @@ void LRU()
     // take log
     pageLogList[i]->isPageFault = !found;
     searcher = firstNode;
-    for (int i = 0; i < PAGE_NUM; i++)
+    for (int j = 0; j < PAGE_NUM; j++)
     {
-      pageLogList[i]->pageList[i] = searcher->page;
+      pageLogList[i]->pageList[j] = searcher->page;
       searcher = searcher->next;
     }
   }
