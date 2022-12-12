@@ -51,8 +51,10 @@ void init()
   printf("\n");
 }
 
-void printLog()
+void printLog(char *type)
 {
+  printf("\n置换算法为: %s\n", type);
+  int faultCount = 0;
   for (int i = 0; i < REQUEST_NUM; i++)
   {
     printf("请求%d,请求页%d,新页面帧:", i + 1, REQUEST_TARGET_LIST[i]);
@@ -61,7 +63,12 @@ void printLog()
       printf("%d ", pageLogList[i]->pageList[j]);
     }
     printf(pageLogList[i]->isPageFault ? ",发生缺页\n" : "\n");
+    if (pageLogList[i]->isPageFault)
+    {
+      faultCount++;
+    }
   }
+  printf("总缺页数: %d\n\n", faultCount);
 }
 
 typedef struct FifoNode
@@ -247,11 +254,11 @@ void OPT()
 int main()
 {
   init();
-  // FIFO();
-  // printLog();
-  // LRU();
-  // printLog();
+  FIFO();
+  printLog("FIFO");
+  LRU();
+  printLog("LRU");
   OPT();
-  printLog();
+  printLog("OPT");
   return 0;
 }
