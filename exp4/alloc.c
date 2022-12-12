@@ -32,7 +32,7 @@ void init()
   REQUEST_TARGET_LIST = malloc(sizeof(int) * REQUEST_NUM);
   for (int i = 0; i < REQUEST_NUM; i++)
   {
-    *(REQUEST_TARGET_LIST + i) = rand() % 10;
+    REQUEST_TARGET_LIST[i] = rand() % 10;
   }
   // init pageLogList
   pageLogList = malloc(sizeof(PageLog *) * REQUEST_NUM);
@@ -81,7 +81,7 @@ void FIFO()
     FifoNode *searcher = curNode;
     for (int j = 0; j < PAGE_NUM; j++)
     {
-      if (searcher->page == *(REQUEST_TARGET_LIST + i))
+      if (searcher->page == REQUEST_TARGET_LIST[i])
       {
         found = true;
         break;
@@ -90,7 +90,7 @@ void FIFO()
     }
     if (!found)
     {
-      curNode->page = *(REQUEST_TARGET_LIST + i);
+      curNode->page = REQUEST_TARGET_LIST[i];
       curNode = curNode->next;
     }
 
@@ -135,7 +135,7 @@ void LRU()
     LruNode *searcher = firstNode;
     for (int j = 0; j < PAGE_NUM; j++)
     {
-      if (searcher->page == *(REQUEST_TARGET_LIST + i))
+      if (searcher->page == REQUEST_TARGET_LIST[i])
       {
         found = true;
         // swap searcher and head
@@ -158,7 +158,7 @@ void LRU()
 
     if (!found)
     {
-      lastNode->page = *(REQUEST_TARGET_LIST + i);
+      lastNode->page = REQUEST_TARGET_LIST[i];
       // swap lastnode and head
       lastNode->next = firstNode;
       firstNode->prev = lastNode;
@@ -179,111 +179,27 @@ void LRU()
   }
 }
 
+void OPT()
+{
+  int **lastSeenMap = malloc(sizeof(int) * REQUEST_NUM * 10);
+  for (int pageI; pageI < 10; pageI++)
+  {
+    for (int requestI; requestI < REQUEST_NUM; requestI++)
+    {
+      lastSeenMap[pageI][requestI];
+    }
+  }
+}
+
 int main()
 {
   init();
   // FIFO();
   // printLog();
-  LRU();
-  printLog();
+  // LRU();
+  // printLog();
   return 0;
 }
-
-// void LRU() // LRU算法
-// {
-//   int i, j, m, k, sum = 1;
-//   int sequence[7] = {0}; // 记录序列
-//   init();
-//   stack[0][0] = numbers[0];
-//   sequence[0] = nums - 1;
-//   for (i = 1; i < nums; i++) // 前半部分，页面空置的情况
-//   {
-//     for (j = 0; j < nums; j++)
-//     {
-//       stack[i][j] = stack[i - 1][j];
-//     }
-//     for (j = 0; j < nums; j++)
-//     {
-//       if (sequence[j] == 0)
-//       {
-//         stack[i][j] = numbers[i];
-//         break;
-//       }
-//     }
-//     for (j = 0; j < i; j++) // 将之前的优先级序列都减1
-//     {
-//       sequence[j]--;
-//     }
-//     sequence[i] = nums - 1; // 最近使用的优先级列为最高
-//     sum++;
-//   }
-//   for (i = nums; i < 20; i++) // 页面不空，需要替换的情况
-//   {
-//     int f;
-//     f = 0;
-//     for (j = 0; j < nums; j++)
-//     {
-//       stack[i][j] = stack[i - 1][j];
-//     }
-//     for (j = 0; j < nums; j++) // 判断输入串中的数字，是否已经在栈中
-//     {
-//       if (stack[i][j] == numbers[i])
-//       {
-//         f = 1;
-//         k = j;
-//         break;
-//       }
-//     }
-//     if (f == 0) // 如果页面栈中没有，不相同
-//     {
-//       for (j = 0; j < nums; j++) // 找优先序列中为0的
-//       {
-//         if (sequence[j] == 0)
-//         {
-//           m = j;
-//           break;
-//         }
-//       }
-//       for (j = 0; j < nums; j++)
-//       {
-//         sequence[j]--;
-//       }
-//       sequence[m] = nums - 1;
-//       stack[i][m] = numbers[i];
-//       sum++;
-//     }
-//     else // 如果页面栈中有，替换优先级
-//     {
-//       if (sequence[k] == 0) // 优先级为最小优先序列的
-//       {
-//         for (j = 0; j < nums; j++)
-//         {
-//           sequence[j]--;
-//         }
-//         sequence[k] = nums - 1;
-//       }
-//       else if (sequence[k] == nums - 1) // 优先级为最大优先序列的
-//       {
-//         // 无需操作
-//       }
-//       else // 优先级为中间优先序列的
-//       {
-//         for (j = 0; j < nums; j++)
-//         {
-//           if (sequence[k] < sequence[j])
-//           {
-//             sequence[j]--;
-//           }
-//         }
-//         sequence[k] = nums - 1;
-//       }
-//     }
-//   }
-//   printf("\n");
-//   printf("LRU算法：\n");
-//   print();
-//   printf("缺页错误数目为：%d\n", sum);
-// }
 
 // void OPT() // OPT算法
 // {
