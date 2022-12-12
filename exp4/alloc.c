@@ -78,7 +78,7 @@ typedef struct FifoNode
 } FifoNode;
 void FIFO()
 {
-  // init cycle link list
+  // init 循环链表
   FifoNode *curNode = malloc(sizeof(FifoNode));
   *curNode = (FifoNode){-1, NULL};
   FifoNode *firstNode = curNode;
@@ -128,7 +128,7 @@ typedef struct LruNode
 
 void LRU()
 {
-  // init lru link list
+  // init 双向链表
   LruNode *firstNode = malloc(sizeof(LruNode));
   LruNode *preNode = firstNode;
   firstNode->page = -1;
@@ -153,7 +153,7 @@ void LRU()
       if (searcher->page == REQUEST_TARGET_LIST[i])
       {
         found = true;
-        // swap searcher and head
+        // swap searcher 和 header
         if (searcher != firstNode)
         {
           searcher->prev->next = searcher->next;
@@ -178,7 +178,7 @@ void LRU()
     if (!found)
     {
       lastNode->page = REQUEST_TARGET_LIST[i];
-      // swap lastNode and head
+      // swap lastNode 和 head
       lastNode->next = firstNode;
       firstNode->prev = lastNode;
       firstNode = lastNode;
@@ -203,13 +203,17 @@ void OPT()
   int(*lastSeenMap)[10] = (int(*)[10])malloc(sizeof(int) * REQUEST_NUM * 10);
   for (int pageI = 0; pageI < 10; pageI++)
   {
+    // 默认无穷大
     int lastSeen = INT32_MAX;
+    // 从尾部开始循环
     for (int requestI = REQUEST_NUM - 1; requestI > -1; requestI--)
     {
       if (REQUEST_TARGET_LIST[requestI] == pageI)
       {
+        // 出现了 设置出现idx
         lastSeen = requestI;
       }
+      // 设置实际offset
       lastSeenMap[requestI][pageI] = lastSeen - requestI;
     }
   }
@@ -236,12 +240,12 @@ void OPT()
       for (int j = 0; j < PAGE_NUM; j++)
       {
         if (maxLastSeen < lastSeenMap[REQUEST_TARGET_LIST[i]][optPages[j]])
-        {
+        { // 找最用不着的
           toReplace = j;
           maxLastSeen = lastSeenMap[REQUEST_TARGET_LIST[i]][optPages[j]];
         }
         if (optPages[j] == -1)
-        {
+        { // 或者空的
           toReplace = j;
           break;
         }
