@@ -161,6 +161,10 @@ void LRU()
           {
             searcher->next->prev = searcher->prev;
           }
+          else
+          {
+            lastNode = searcher->prev;
+          }
           searcher->next = firstNode;
           searcher->prev = NULL;
           firstNode->prev = searcher;
@@ -174,7 +178,7 @@ void LRU()
     if (!found)
     {
       lastNode->page = REQUEST_TARGET_LIST[i];
-      // swap lastnode and head
+      // swap lastNode and head
       lastNode->next = firstNode;
       firstNode->prev = lastNode;
       firstNode = lastNode;
